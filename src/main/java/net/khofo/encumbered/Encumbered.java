@@ -1,12 +1,10 @@
 package net.khofo.encumbered;
 
+import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -41,6 +39,13 @@ public class Encumbered {
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        modEventBus.addListener(this::registerDataMaps);
+        NeoForge.EVENT_BUS.addListener(EncumberedCommands::register);
+    }
+
+    private void registerDataMaps(RegisterDataMapTypesEvent event) {
+        event.register(EncumberedDataMaps.ITEM_WEIGHTS);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
