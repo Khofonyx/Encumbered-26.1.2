@@ -1,0 +1,13 @@
+{
+  "itemGroup.encumbered": "Example Mod Tab",
+  "block.encumbered.example_block": "Example Block",
+  "item.encumbered.example_item": "Example Item",
+
+  "encumbered.configuration.title": "Encumbered Configs",
+  "encumbered.configuration.section.encumbered.common.toml": "Encumbered Configs",
+  "encumbered.configuration.section.encumbered.common.toml.title": "Encumbered Configs",
+  "encumbered.configuration.items": "Item List",
+  "encumbered.configuration.logDirtBlock": "Log Dirt Block",
+  "encumbered.configuration.magicNumberIntroduction": "Magic Number Text",
+  "encumbered.configuration.magicNumber": "Magic Number"
+}
