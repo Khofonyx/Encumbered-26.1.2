@@ -1,4 +1,4 @@
-package net.khofo.server.packets;
+package net.khofo.encumbered.server.packets;
 
 import io.netty.buffer.ByteBuf;
 import net.khofo.encumbered.Encumbered;

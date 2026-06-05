@@ -1,15 +1,11 @@
-package net.khofo.server;
+package net.khofo.encumbered.server;
 
 import net.khofo.encumbered.Config;
 import net.khofo.encumbered.Encumbered;
-import net.khofo.server.packets.EncumberedPayload;
-import net.minecraft.resources.Identifier;
+import net.khofo.encumbered.server.packets.EncumberedPayload;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.AttributeMap;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.equipment.ArmorType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;

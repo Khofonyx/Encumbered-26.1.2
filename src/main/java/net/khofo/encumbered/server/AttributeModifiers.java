@@ -1,4 +1,4 @@
-package net.khofo.server;
+package net.khofo.encumbered.server;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;

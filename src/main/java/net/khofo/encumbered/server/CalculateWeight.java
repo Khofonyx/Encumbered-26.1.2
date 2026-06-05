@@ -1,4 +1,4 @@
-package net.khofo.server;
+package net.khofo.encumbered.server;
 
 import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.data.WeightsDataMap;

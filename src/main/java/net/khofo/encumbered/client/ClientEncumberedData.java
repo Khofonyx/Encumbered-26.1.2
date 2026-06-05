@@ -1,4 +1,4 @@
-package net.khofo.client;
+package net.khofo.encumbered.client;
 
 import net.khofo.encumbered.Encumbered;
 import net.neoforged.api.distmarker.Dist;

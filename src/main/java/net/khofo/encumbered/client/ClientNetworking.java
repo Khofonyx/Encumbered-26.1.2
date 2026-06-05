@@ -1,7 +1,7 @@
-package net.khofo.client;
+package net.khofo.encumbered.client;
 
 import net.khofo.encumbered.Encumbered;
-import net.khofo.server.packets.EncumberedPayload;
+import net.khofo.encumbered.server.packets.EncumberedPayload;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

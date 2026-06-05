@@ -1,6 +1,6 @@
 package net.khofo.encumbered;
 
-import net.khofo.server.packets.EncumberedPayload;
+import net.khofo.encumbered.server.packets.EncumberedPayload;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
