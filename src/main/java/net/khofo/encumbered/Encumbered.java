@@ -1,5 +1,12 @@
 package net.khofo.encumbered;
 
+import net.khofo.encumbered.data.WeightEntry;
+import net.khofo.encumbered.data.WeightsDataMap;
+import net.minecraft.core.Holder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
 import org.slf4j.Logger;
 
@@ -28,7 +35,6 @@ public class Encumbered {
     public Encumbered(IEventBus modEventBus, ModContainer modContainer) {
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
-
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (Encumbered) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
@@ -37,15 +43,11 @@ public class Encumbered {
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
 
+        // Register the Weights Data Map
+        modEventBus.addListener(WeightsDataMap::registerWeightsDataMap);
+
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-
-        modEventBus.addListener(this::registerDataMaps);
-        NeoForge.EVENT_BUS.addListener(EncumberedCommands::register);
-    }
-
-    private void registerDataMaps(RegisterDataMapTypesEvent event) {
-        event.register(EncumberedDataMaps.ITEM_WEIGHTS);
+        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

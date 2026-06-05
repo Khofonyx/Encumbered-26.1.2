@@ -1,15 +1,8 @@
 package net.khofo.encumbered;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
@@ -17,7 +10,22 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
+    public static final ModConfigSpec.IntValue THRESHOLD_1 = BUILDER
+            .comment("First weight threshold where you cannot sprint or dive in water.")
+            .defineInRange("THRESHOLD_1", 70, 0, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue THRESHOLD_2 = BUILDER
+            .comment("Second weight threshold where you cannot jump, sprint, swim, and are slowed down.")
+            .defineInRange("THRESHOLD_2", 100, 0, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.DoubleValue DEFAULT_ITEM_WEIGHT = BUILDER
+            .comment("The default weight assigned to every item not defined in the item_weights Data Map")
+            .defineInRange("DEFAULT_ITEM_WEIGHT", 1, 0, Double.MAX_VALUE);
+
+    static final ModConfigSpec SPEC = BUILDER.build();
+
+
+    /*public static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
             .comment("Whether to log the dirt block on common setup")
             .define("logDirtBlock", true);
 
@@ -38,5 +46,5 @@ public class Config {
 
     private static boolean validateItemName(final Object obj) {
         return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(Identifier.parse(itemName));
-    }
+    }*/
 }
