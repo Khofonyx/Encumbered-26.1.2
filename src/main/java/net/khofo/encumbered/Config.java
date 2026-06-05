@@ -10,13 +10,13 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.IntValue THRESHOLD_1 = BUILDER
+    public static final ModConfigSpec.DoubleValue THRESHOLD_1 = BUILDER
             .comment("First weight threshold where you cannot sprint or dive in water.")
-            .defineInRange("THRESHOLD_1", 70, 0, Integer.MAX_VALUE);
+            .defineInRange("THRESHOLD_1", 70, 0, Double.MAX_VALUE);
 
-    public static final ModConfigSpec.IntValue THRESHOLD_2 = BUILDER
+    public static final ModConfigSpec.DoubleValue THRESHOLD_2 = BUILDER
             .comment("Second weight threshold where you cannot jump, sprint, swim, and are slowed down.")
-            .defineInRange("THRESHOLD_2", 100, 0, Integer.MAX_VALUE);
+            .defineInRange("THRESHOLD_2", 100, 0, Double.MAX_VALUE);
 
     public static final ModConfigSpec.DoubleValue DEFAULT_ITEM_WEIGHT = BUILDER
             .comment("The default weight assigned to every item not defined in the item_weights Data Map")
