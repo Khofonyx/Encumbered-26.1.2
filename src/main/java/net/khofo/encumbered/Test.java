@@ -3,13 +3,9 @@ package net.khofo.encumbered;
 /*
 MAKE SURE TO DELETE THIS CLASS, THIS WAS JUST FOR TESTING.
  */
-import net.khofo.encumbered.data.WeightEntry;
 import net.khofo.encumbered.data.WeightsDataMap;
-import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;

@@ -3,17 +3,22 @@ package net.khofo.encumbered.server;
 import net.khofo.encumbered.Config;
 import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.server.packets.EncumberedPayload;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.camel.Camel;
+import net.minecraft.world.entity.animal.equine.*;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = Encumbered.MOD_ID)
 public class ApplyEffects {
-
     // Subscribe to the onPlayerTick event to handle all effect applications.
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
@@ -25,15 +30,23 @@ public class ApplyEffects {
         }
 
         // Creative/spectator should have no encumbrance effects
-        if (player.isCreative() || player.isSpectator()) {
-            allowSprinting(player);
+        if (shouldIgnoreEncumbrance(player)) {
             sendEncumbranceLevel(player, 0);
+            togglePlayerSlowdown(player, false);
             return;
         }
 
+        // Get the player thresholds from the configs
         float th1 = Config.THRESHOLD_1.get().floatValue();
         float th2 = Config.THRESHOLD_2.get().floatValue();
+
+        // Calculate the players weight.
         float playerWeight = CalculateWeight.getInventoryWeight(player);
+
+        // If you are on a vehicle, get it's boost amount from the configs and add it to the players thresholds.
+        float mount_boost = getMountThresholdBoost(player.getVehicle());
+        th1 += mount_boost;
+        th2 += mount_boost;
 
         int level;
 
@@ -46,50 +59,89 @@ public class ApplyEffects {
             level = 0;
         }
 
-        // If you're at either threshold don't allow sprinting.
-        if (level >= 1) {
-            disallowSprinting(player);
-        } else {
-            allowSprinting(player);
+        // Handles some server side things like slowing down the player and stoping them from riding.
+        // Some other things are handled on the client by disabling the keys.
+        switch (level){
+            case 2:
+                togglePlayerSlowdown(player, true);
+                player.stopRiding();
+                break;
+            case 1:
+                togglePlayerSlowdown(player, false);
+                break;
+            case 0:
+                togglePlayerSlowdown(player, false);
+                break;
+            default:
+                togglePlayerSlowdown(player, false);
+                break;
         }
 
         // Send the "level" variable to the client so they can see how encumbered the player is.
         sendEncumbranceLevel(player, level);
     }
 
-    // Helper method to disable sprinting. Works by adding an AttributeModifier (stopSprintingModifier) to the player
-    public static void disallowSprinting(Player player) {
-        var speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+    // Entity interact event used to stop a player from mounting an entity if they are over that entities carry weight.
+    @SubscribeEvent
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        Player player = event.getEntity();
 
-        if (speed == null) {
+        if (player.level().isClientSide()) {
             return;
         }
-
-        // Only apply when the player is sprinting so that we don't get slowed down when walking.
-        // If player is walking remove it.
-        if (player.isSprinting()) {
-            // need this if to make sure the modifier isn't already applied.
-            if (speed.getModifier(AttributeModifiers.stopSprintingModifierID) == null) {
-                speed.addTransientModifier(AttributeModifiers.stopSprintingModifier);
-            }
-        } else {
-            if (speed.getModifier(AttributeModifiers.stopSprintingModifierID) != null) {
-                speed.removeModifier(AttributeModifiers.stopSprintingModifierID);
-            }
+        float mount_boost_amount = getMountThresholdBoost(event.getTarget());
+        if (shouldIgnoreEncumbrance(player)){
+            return;
+        }
+        System.out.println(mount_boost_amount);
+        float playerWeight = CalculateWeight.getInventoryWeight(player);
+        float th2 = Config.THRESHOLD_2.get().floatValue();
+        if (playerWeight >= (mount_boost_amount + th2)) {
+            event.setCanceled(true);
+            player.sendSystemMessage(Component.literal("No way fat arse : " + playerWeight + " lbs"));
         }
     }
 
-    // Helper method that allows sprinting by removing the modifier.
-    public static void allowSprinting(Player player) {
-        var speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+    // helper method to get the amount a mount increases or decreases the weight carrying capacity.
+    public static float getMountThresholdBoost(Entity entity){
+        if(entity instanceof Horse){
+            return Config.HORSE_THRESHOLD_BOOST.get().floatValue();
+        }
+        if(entity instanceof Pig){
+            return Config.PIG_THRESHOLD_BOOST.get().floatValue();
+        }
+        if(entity instanceof Mule){
+            return Config.MULE_THRESHOLD_BOOST.get().floatValue();
+        }
+        if(entity instanceof Donkey){
+            return Config.DONKEY_THRESHOLD_BOOST.get().floatValue();
+        }
+        if(entity instanceof Llama){
+            return Config.LLAMA_THRESHOLD_BOOST.get().floatValue();
+        }
+        if(entity instanceof Camel){
+            return Config.CAMEL_THRESHOLD_BOOST.get().floatValue();
+        }
+        return 0f;
+    }
 
+    // apples or removes the player slowdown AttributeModifier.
+    public static void togglePlayerSlowdown(Player player, boolean toggle){
+        var speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed == null) {
             return;
         }
-
-        if (speed.getModifier(AttributeModifiers.stopSprintingModifierID) != null) {
-            speed.removeModifier(AttributeModifiers.stopSprintingModifierID);
+        boolean hasModifier = speed.getModifier(AttributeModifiers.playerSpeedID) != null;
+        if (toggle){
+            if (!hasModifier) {
+                speed.addTransientModifier(AttributeModifiers.playerSpeedModifier);
+            }
+        }else{
+            if (hasModifier) {
+                speed.removeModifier(AttributeModifiers.playerSpeedModifier);
+            }
         }
+
     }
 
     // This is a helper method to send the EncumberedPayload to the client.
@@ -101,4 +153,9 @@ public class ApplyEffects {
             );
         }
     }
+
+    public static boolean shouldIgnoreEncumbrance(Player player){
+        return player.isCreative() || player.isSpectator();
+    }
+
 }

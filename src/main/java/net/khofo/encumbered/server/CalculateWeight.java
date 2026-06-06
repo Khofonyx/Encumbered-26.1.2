@@ -6,6 +6,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.equine.AbstractChestedHorse;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.animal.nautilus.AbstractNautilus;
+import net.minecraft.world.entity.animal.nautilus.Nautilus;
+import net.minecraft.world.entity.monster.Strider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -17,7 +20,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 public class CalculateWeight {
 
     /*
-    This constantly calculates the players inventory weight.
+    This constantly calculates the players inventory weight and displays it.
      */
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event){

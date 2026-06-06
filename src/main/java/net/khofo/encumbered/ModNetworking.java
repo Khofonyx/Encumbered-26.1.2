@@ -6,6 +6,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+/*
+Registers the EncumberedPayload.
+ */
 @EventBusSubscriber(modid = Encumbered.MOD_ID)
 public class ModNetworking {
     @SubscribeEvent
