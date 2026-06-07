@@ -10,7 +10,13 @@ This encumbered level matches the encumbered thresholds. so level 1 is Threshold
  */
 @EventBusSubscriber(modid = Encumbered.MOD_ID, value = Dist.CLIENT)
 public class ClientEncumberedData {
+    private static float weight = 0.0F;
     public static int level = 0;
+
+    public static void set(int newLevel, float newWeight) {
+        level = newLevel;
+        weight = newWeight;
+    }
 
     public static boolean cannotSprint() {
         return level >= 1;
@@ -19,4 +25,10 @@ public class ClientEncumberedData {
     public static boolean cannotJump() {
         return level >= 2;
     }
+
+    public static float getWeight(){
+        return weight;
+    }
+
+    public static int getLevel(){return level;}
 }

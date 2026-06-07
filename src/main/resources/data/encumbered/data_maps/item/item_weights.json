@@ -7,10 +7,13 @@
       "weight": 5.0
     },
     "minecraft:iron_block": {
-      "weight": 9.0
+      "weight": 10000.0
     },
     "#minecraft:logs": {
       "weight": 7.0
+    },
+    "minecraft:iron_ingot": {
+      "weight": 9.123456789
     }
   }
 }

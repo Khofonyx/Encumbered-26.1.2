@@ -4,7 +4,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
 // Demonstrates how to use Neo's config APIs
-public class Config {
+public class ServerConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.DoubleValue THRESHOLD_1 = BUILDER
@@ -42,6 +42,10 @@ public class Config {
     public static final ModConfigSpec.DoubleValue CAMEL_THRESHOLD_BOOST = BUILDER
             .comment("The amount to add to your weight thresholds for riding camels")
             .defineInRange("CAMEL_THRESHOLD_BOOST", 30, -Double.MAX_VALUE, Double.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue UNIT = BUILDER
+            .comment("The unit to make the weight (0 = lbs, 1 = kg")
+            .defineInRange("UNIT", 0, 0, 1);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 }

@@ -1,6 +1,6 @@
 package net.khofo.encumbered.data;
 
-import net.khofo.encumbered.Config;
+import net.khofo.encumbered.ServerConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -27,6 +27,6 @@ public final class WeightsDataMap {
     public static float getWeight(ItemStack stack){
         Holder<Item> holder = BuiltInRegistries.ITEM.wrapAsHolder(stack.getItem());
         WeightEntry data = holder.getData(WeightsDataMap);
-        return data != null ? data.weight() : Config.DEFAULT_ITEM_WEIGHT.get().floatValue();
+        return data != null ? data.weight() : ServerConfig.DEFAULT_ITEM_WEIGHT.get().floatValue();
     }
 }

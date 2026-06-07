@@ -1,6 +1,6 @@
 package net.khofo.encumbered.server;
 
-import net.khofo.encumbered.Config;
+import net.khofo.encumbered.ServerConfig;
 import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.server.packets.EncumberedPayload;
 import net.minecraft.network.chat.Component;
@@ -29,19 +29,19 @@ public class ApplyEffects {
             return;
         }
 
+        // Calculate the players weight.
+        float playerWeight = CalculateWeight.getInventoryWeight(player);
+
         // Creative/spectator should have no encumbrance effects
         if (shouldIgnoreEncumbrance(player)) {
-            sendEncumbranceLevel(player, 0);
+            sendEncumbranceLevel(player, 0, playerWeight);
             togglePlayerSlowdown(player, false);
             return;
         }
 
         // Get the player thresholds from the configs
-        float th1 = Config.THRESHOLD_1.get().floatValue();
-        float th2 = Config.THRESHOLD_2.get().floatValue();
-
-        // Calculate the players weight.
-        float playerWeight = CalculateWeight.getInventoryWeight(player);
+        float th1 = ServerConfig.THRESHOLD_1.get().floatValue();
+        float th2 = ServerConfig.THRESHOLD_2.get().floatValue();
 
         // If you are on a vehicle, get it's boost amount from the configs and add it to the players thresholds.
         float mount_boost = getMountThresholdBoost(player.getVehicle());
@@ -78,7 +78,7 @@ public class ApplyEffects {
         }
 
         // Send the "level" variable to the client so they can see how encumbered the player is.
-        sendEncumbranceLevel(player, level);
+        sendEncumbranceLevel(player, level, playerWeight);
     }
 
     // Entity interact event used to stop a player from mounting an entity if they are over that entities carry weight.
@@ -95,7 +95,7 @@ public class ApplyEffects {
         }
         System.out.println(mount_boost_amount);
         float playerWeight = CalculateWeight.getInventoryWeight(player);
-        float th2 = Config.THRESHOLD_2.get().floatValue();
+        float th2 = ServerConfig.THRESHOLD_2.get().floatValue();
         if (playerWeight >= (mount_boost_amount + th2)) {
             event.setCanceled(true);
             player.sendSystemMessage(Component.literal("No way fat arse : " + playerWeight + " lbs"));
@@ -105,22 +105,22 @@ public class ApplyEffects {
     // helper method to get the amount a mount increases or decreases the weight carrying capacity.
     public static float getMountThresholdBoost(Entity entity){
         if(entity instanceof Horse){
-            return Config.HORSE_THRESHOLD_BOOST.get().floatValue();
+            return ServerConfig.HORSE_THRESHOLD_BOOST.get().floatValue();
         }
         if(entity instanceof Pig){
-            return Config.PIG_THRESHOLD_BOOST.get().floatValue();
+            return ServerConfig.PIG_THRESHOLD_BOOST.get().floatValue();
         }
         if(entity instanceof Mule){
-            return Config.MULE_THRESHOLD_BOOST.get().floatValue();
+            return ServerConfig.MULE_THRESHOLD_BOOST.get().floatValue();
         }
         if(entity instanceof Donkey){
-            return Config.DONKEY_THRESHOLD_BOOST.get().floatValue();
+            return ServerConfig.DONKEY_THRESHOLD_BOOST.get().floatValue();
         }
         if(entity instanceof Llama){
-            return Config.LLAMA_THRESHOLD_BOOST.get().floatValue();
+            return ServerConfig.LLAMA_THRESHOLD_BOOST.get().floatValue();
         }
         if(entity instanceof Camel){
-            return Config.CAMEL_THRESHOLD_BOOST.get().floatValue();
+            return ServerConfig.CAMEL_THRESHOLD_BOOST.get().floatValue();
         }
         return 0f;
     }
@@ -145,11 +145,11 @@ public class ApplyEffects {
     }
 
     // This is a helper method to send the EncumberedPayload to the client.
-    private static void sendEncumbranceLevel(Player player, int level) {
+    private static void sendEncumbranceLevel(Player player, int level, float weight) {
         if (player instanceof ServerPlayer serverPlayer) {
             PacketDistributor.sendToPlayer(
                     serverPlayer,
-                    new EncumberedPayload(level)
+                    new EncumberedPayload(level,weight)
             );
         }
     }

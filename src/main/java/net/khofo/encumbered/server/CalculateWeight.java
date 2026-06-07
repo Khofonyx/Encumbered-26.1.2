@@ -19,23 +19,6 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 @EventBusSubscriber(modid = Encumbered.MOD_ID)
 public class CalculateWeight {
 
-    /*
-    This constantly calculates the players inventory weight and displays it.
-     */
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event){
-        Player player = event.getEntity();
-        // Checks if the code is running on the client, if it is, don't run it.
-        if (player.level().isClientSide()) {
-            return;
-        }
-
-        // If the player is not in creative or spectator mode, calculate the players weight and print it to the chat.
-        if (!(player.isCreative() || player.isSpectator())){
-            player.sendSystemMessage(Component.literal("Player Weight: " + getInventoryWeight(player)));
-        }
-    }
-
     // Calculate the player's weight (inventory, hotbar, item in left hand, item on mouse cursor, armor slots, vehicle slots)
     public static float getInventoryWeight(Player player){
         Inventory inventory = player.getInventory();
