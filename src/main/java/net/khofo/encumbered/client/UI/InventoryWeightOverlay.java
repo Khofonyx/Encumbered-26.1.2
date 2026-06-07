@@ -53,7 +53,7 @@ public class InventoryWeightOverlay {
 
         Minecraft minecraft = Minecraft.getInstance();
 
-        if (minecraft.player == null) {
+        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
             return;
         }
 
@@ -113,7 +113,7 @@ public class InventoryWeightOverlay {
     public static void onHudRender(RenderGuiEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
 
-        if (minecraft.player == null) {
+        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
             return;
         }
 
