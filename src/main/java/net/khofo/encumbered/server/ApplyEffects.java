@@ -98,7 +98,7 @@ public class ApplyEffects {
         float th2 = ServerConfig.THRESHOLD_2.get().floatValue();
         if (playerWeight >= (mount_boost_amount + th2)) {
             event.setCanceled(true);
-            player.sendSystemMessage(Component.literal("No way fat arse : " + playerWeight + " lbs"));
+            player.sendSystemMessage(Component.literal("You weight too much!"));
         }
     }
 
