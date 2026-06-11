@@ -13,7 +13,13 @@ If the int is 1 then the player is at encumberance threshold 1
 if 2 then they are at encumberance threshold 2
 etc.
  */
-public record EncumberedPayload(int level, float weight) implements CustomPacketPayload {
+public record EncumberedPayload(
+        int level,
+        float weight,
+        boolean cannotSprint,
+        boolean cannotJump
+) implements CustomPacketPayload {
+
     public static final Type<EncumberedPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(
                     Encumbered.MOD_ID,
@@ -26,6 +32,10 @@ public record EncumberedPayload(int level, float weight) implements CustomPacket
                     EncumberedPayload::level,
                     ByteBufCodecs.FLOAT,
                     EncumberedPayload::weight,
+                    ByteBufCodecs.BOOL,
+                    EncumberedPayload::cannotSprint,
+                    ByteBufCodecs.BOOL,
+                    EncumberedPayload::cannotJump,
                     EncumberedPayload::new
             );
 

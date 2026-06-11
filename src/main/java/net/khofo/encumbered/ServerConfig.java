@@ -43,9 +43,45 @@ public class ServerConfig {
             .comment("The amount to add to your weight thresholds for riding camels")
             .defineInRange("CAMEL_THRESHOLD_BOOST", 30, -Double.MAX_VALUE, Double.MAX_VALUE);
 
-    public static final ModConfigSpec.IntValue UNIT = BUILDER
-            .comment("The unit to make the weight (0 = lbs, 1 = kg")
-            .defineInRange("UNIT", 0, 0, 1);
+    public static final ModConfigSpec.BooleanValue LEVEL_1_SLOWDOWN = BUILDER
+            .comment("If true, level 1 encumbrance slows the player.")
+            .define("level_1_slowdown", false);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_1_DISMOUNT = BUILDER
+            .comment("If true, level 1 encumbrance forces the player to dismount.")
+            .define("level_1_dismount", false);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_1_SINKING = BUILDER
+            .comment("If true, level 1 encumbrance makes the player sink in fluids.")
+            .define("level_1_sinking", false);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_1_DISABLE_SPRINT = BUILDER
+            .comment("If true, level 1 encumbrance prevents the player from sprinting.")
+            .define("level_1_disable_sprint", true);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_1_DISABLE_JUMP = BUILDER
+            .comment("If true, level 1 encumbrance prevents the player from jumping.")
+            .define("level_1_disable_jump", false);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_2_SLOWDOWN = BUILDER
+            .comment("If true, level 2 encumbrance slows the player.")
+            .define("level_2_slowdown", true);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_2_DISMOUNT = BUILDER
+            .comment("If true, level 2 encumbrance forces the player to dismount.")
+            .define("level_2_dismount", true);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_2_SINKING = BUILDER
+            .comment("If true, level 2 encumbrance makes the player sink in fluids.")
+            .define("level_2_sinking", true);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_2_DISABLE_SPRINT = BUILDER
+            .comment("If true, level 2 encumbrance prevents the player from sprinting.")
+            .define("level_2_disable_sprint", true);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_2_DISABLE_JUMP = BUILDER
+            .comment("If true, level 2 encumbrance prevents the player from jumping.")
+            .define("level_2_disable_jump", true);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 }

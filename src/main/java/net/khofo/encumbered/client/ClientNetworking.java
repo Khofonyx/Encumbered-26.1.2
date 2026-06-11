@@ -13,7 +13,14 @@ public class ClientNetworking {
     public static void registerClientPayloads(RegisterClientPayloadHandlersEvent event) {
         event.register(
                 EncumberedPayload.TYPE,
-                (payload, context) -> ClientEncumberedData.set(payload.level(), payload.weight())
+                (payload, context) -> {
+                    ClientEncumberedData.set(
+                            payload.level(),
+                            payload.weight(),
+                            payload.cannotSprint(),
+                            payload.cannotJump()
+                    );
+                }
         );
     }
 }

@@ -15,27 +15,33 @@ This class applies effects to the player. This needs to get it's data from the s
 public class ApplyEffects {
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+
+        if (minecraft.player == null) {
+            return;
+        }
+
         Player player = event.getEntity();
 
-        // If the player is not you (i.e. another player in the world) then don't do anything.
-        if (player != Minecraft.getInstance().player) {
+        // Only affect YOUR local player, not other players.
+        if (player != minecraft.player) {
             return;
         }
 
-        // If player is in creative or spectator, don't apply effects
-        if (Minecraft.getInstance().player.isCreative() || Minecraft.getInstance().player.isSpectator()){
+        // Creative/spectator should not be blocked.
+        if (player.isCreative() || player.isSpectator()) {
             return;
         }
 
-        // If the player is at their threshold 1 value, then disable sprinting
+        // Server told the client: "this player cannot sprint right now."
         if (ClientEncumberedData.cannotSprint()) {
-            Minecraft.getInstance().options.keySprint.setDown(false);
+            minecraft.options.keySprint.setDown(false);
             player.setSprinting(false);
         }
 
-        // If the player is at their threshold 2 value, then
+        // Server told the client: "this player cannot jump right now."
         if (ClientEncumberedData.cannotJump()) {
-            Minecraft.getInstance().options.keyJump.setDown(false);
+            minecraft.options.keyJump.setDown(false);
         }
     }
 }

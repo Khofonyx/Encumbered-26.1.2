@@ -3,6 +3,7 @@ package net.khofo.encumbered.server;
 import net.khofo.encumbered.ServerConfig;
 import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.server.packets.EncumberedPayload;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -34,7 +35,7 @@ public class ApplyEffects {
 
         // Creative/spectator should have no encumbrance effects
         if (shouldIgnoreEncumbrance(player)) {
-            sendEncumbranceLevel(player, 0, playerWeight);
+            sendEncumbranceLevel(player, 0, playerWeight, false, false);
             togglePlayerSlowdown(player, false);
             return;
         }
@@ -58,27 +59,11 @@ public class ApplyEffects {
         } else {
             level = 0;
         }
-
-        // Handles some server side things like slowing down the player and stoping them from riding.
-        // Some other things are handled on the client by disabling the keys.
-        switch (level){
-            case 2:
-                togglePlayerSlowdown(player, true);
-                player.stopRiding();
-                break;
-            case 1:
-                togglePlayerSlowdown(player, false);
-                break;
-            case 0:
-                togglePlayerSlowdown(player, false);
-                break;
-            default:
-                togglePlayerSlowdown(player, false);
-                break;
-        }
-
+        applyConfiguredEffects(player, level);
+        boolean cannotSprint = shouldDisableSprint(level);
+        boolean cannotJump = shouldDisableJump(level);
         // Send the "level" variable to the client so they can see how encumbered the player is.
-        sendEncumbranceLevel(player, level, playerWeight);
+        sendEncumbranceLevel(player, level, playerWeight, cannotSprint, cannotJump);
     }
 
     // Entity interact event used to stop a player from mounting an entity if they are over that entities carry weight.
@@ -90,15 +75,20 @@ public class ApplyEffects {
             return;
         }
         float mount_boost_amount = getMountThresholdBoost(event.getTarget());
+
+        if (mount_boost_amount == 0.0F) {
+            return;
+        }
+
         if (shouldIgnoreEncumbrance(player)){
             return;
         }
-        System.out.println(mount_boost_amount);
+
         float playerWeight = CalculateWeight.getInventoryWeight(player);
         float th2 = ServerConfig.THRESHOLD_2.get().floatValue();
         if (playerWeight >= (mount_boost_amount + th2)) {
             event.setCanceled(true);
-            player.sendSystemMessage(Component.literal("You weight too much!"));
+            player.sendSystemMessage(Component.literal("You weigh too much!"));
         }
     }
 
@@ -145,11 +135,17 @@ public class ApplyEffects {
     }
 
     // This is a helper method to send the EncumberedPayload to the client.
-    private static void sendEncumbranceLevel(Player player, int level, float weight) {
+    private static void sendEncumbranceLevel(
+            Player player,
+            int level,
+            float weight,
+            boolean cannotSprint,
+            boolean cannotJump
+    ) {
         if (player instanceof ServerPlayer serverPlayer) {
             PacketDistributor.sendToPlayer(
                     serverPlayer,
-                    new EncumberedPayload(level,weight)
+                    new EncumberedPayload(level, weight, cannotSprint, cannotJump)
             );
         }
     }
@@ -158,4 +154,108 @@ public class ApplyEffects {
         return player.isCreative() || player.isSpectator();
     }
 
+    // Helper method that detects if a players hitbox is touching a fluid
+    private static boolean isTouchingAnyFluid(Player player) {
+        var level = player.level();
+        var box = player.getBoundingBox();
+
+        int minX = (int) Math.floor(box.minX);
+        int maxX = (int) Math.floor(box.maxX);
+        int minY = (int) Math.floor(box.minY);
+        int maxY = (int) Math.floor(box.maxY);
+        int minZ = (int) Math.floor(box.minZ);
+        int maxZ = (int) Math.floor(box.maxZ);
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    var fluidState = level.getFluidState(new BlockPos(x, y, z));
+
+                    if (!fluidState.isEmpty()) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Helper method that applies a sinking effect to the player by adding a negative force on the y axis.
+    private static void applySinkingEffect(Player player) {
+        if (player.isCreative() || player.isSpectator()) {
+            return;
+        }
+
+        if (!isTouchingAnyFluid(player)) {
+            return;
+        }
+
+        var motion = player.getDeltaMovement();
+
+        double x = motion.x;
+        double y = motion.y;
+        double z = motion.z;
+
+        if (y > 0.0D) {
+            y = 0.0D;
+        }
+
+        y -= 0.03D;
+
+        x *= 0.6D;
+        z *= 0.6D;
+
+        player.setDeltaMovement(x, y, z);
+        player.hurtMarked = true;
+    }
+
+    private static void applyConfiguredEffects(Player player, int level) {
+        boolean shouldSlowdown = false;
+        boolean shouldDismount = false;
+        boolean shouldSink = false;
+
+        switch (level) {
+            case 2:
+                shouldSlowdown = ServerConfig.LEVEL_2_SLOWDOWN.get();
+                shouldDismount = ServerConfig.LEVEL_2_DISMOUNT.get();
+                shouldSink = ServerConfig.LEVEL_2_SINKING.get();
+                break;
+
+            case 1:
+                shouldSlowdown = ServerConfig.LEVEL_1_SLOWDOWN.get();
+                shouldDismount = ServerConfig.LEVEL_1_DISMOUNT.get();
+                shouldSink = ServerConfig.LEVEL_1_SINKING.get();
+                break;
+
+            case 0:
+            default:
+                break;
+        }
+
+        togglePlayerSlowdown(player, shouldSlowdown);
+
+        if (shouldDismount) {
+            player.stopRiding();
+        }
+
+        if (shouldSink) {
+            applySinkingEffect(player);
+        }
+    }
+    private static boolean shouldDisableSprint(int level) {
+        return switch (level) {
+            case 2 -> ServerConfig.LEVEL_2_DISABLE_SPRINT.get();
+            case 1 -> ServerConfig.LEVEL_1_DISABLE_SPRINT.get();
+            default -> false;
+        };
+    }
+
+    private static boolean shouldDisableJump(int level) {
+        return switch (level) {
+            case 2 -> ServerConfig.LEVEL_2_DISABLE_JUMP.get();
+            case 1 -> ServerConfig.LEVEL_1_DISABLE_JUMP.get();
+            default -> false;
+        };
+    }
 }
