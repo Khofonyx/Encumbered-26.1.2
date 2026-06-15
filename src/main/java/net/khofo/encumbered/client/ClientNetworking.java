@@ -18,7 +18,8 @@ public class ClientNetworking {
                             payload.level(),
                             payload.weight(),
                             payload.cannotSprint(),
-                            payload.cannotJump()
+                            payload.cannotJump(),
+                            payload.cannotUseElytra()
                     );
                 }
         );

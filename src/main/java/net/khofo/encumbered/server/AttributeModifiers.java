@@ -12,4 +12,9 @@ public class AttributeModifiers {
     public static final AttributeModifier playerSpeedModifier = new AttributeModifier(
             playerSpeedID,-0.7, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
     );
+
+    public static final Identifier playerJumpID = Identifier.fromNamespaceAndPath("encumbered", "player_jump");
+    public static final AttributeModifier playerJumpModifier = new AttributeModifier(
+            playerJumpID,-1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+    );
 }

@@ -15,12 +15,14 @@ public class ClientEncumberedData {
 
     private static boolean cannotSprint = false;
     private static boolean cannotJump = false;
+    private static boolean cannotUseElytra = false;
 
-    public static void set(int newLevel, float newWeight, boolean newCannotSprint, boolean newCannotJump) {
+    public static void set(int newLevel, float newWeight, boolean newCannotSprint, boolean newCannotJump, boolean newCannotUseElytra) {
         level = newLevel;
         weight = newWeight;
         cannotSprint = newCannotSprint;
         cannotJump = newCannotJump;
+        cannotUseElytra = newCannotUseElytra;
     }
 
     public static boolean cannotSprint() {
@@ -37,5 +39,9 @@ public class ClientEncumberedData {
 
     public static int getLevel() {
         return level;
+    }
+
+    public static boolean cannotUseElytra(){
+        return cannotUseElytra;
     }
 }

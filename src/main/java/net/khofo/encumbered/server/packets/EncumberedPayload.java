@@ -17,7 +17,8 @@ public record EncumberedPayload(
         int level,
         float weight,
         boolean cannotSprint,
-        boolean cannotJump
+        boolean cannotJump,
+        boolean cannotUseElytra
 ) implements CustomPacketPayload {
 
     public static final Type<EncumberedPayload> TYPE =
@@ -36,6 +37,8 @@ public record EncumberedPayload(
                     EncumberedPayload::cannotSprint,
                     ByteBufCodecs.BOOL,
                     EncumberedPayload::cannotJump,
+                    ByteBufCodecs.BOOL,
+                    EncumberedPayload::cannotUseElytra,
                     EncumberedPayload::new
             );
 

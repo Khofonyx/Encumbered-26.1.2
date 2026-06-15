@@ -39,9 +39,8 @@ public class ApplyEffects {
             player.setSprinting(false);
         }
 
-        // Server told the client: "this player cannot jump right now."
-        if (ClientEncumberedData.cannotJump()) {
-            minecraft.options.keyJump.setDown(false);
+        if (ClientEncumberedData.cannotUseElytra()){
+            player.stopFallFlying();
         }
     }
 }

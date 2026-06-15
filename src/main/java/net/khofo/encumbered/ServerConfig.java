@@ -43,6 +43,14 @@ public class ServerConfig {
             .comment("The amount to add to your weight thresholds for riding camels")
             .defineInRange("CAMEL_THRESHOLD_BOOST", 30, -Double.MAX_VALUE, Double.MAX_VALUE);
 
+    public static final ModConfigSpec.DoubleValue CHEST_BOAT_THRESHOLD_BOOST = BUILDER
+            .comment("The amount to add to your weight thresholds for riding chest boats.")
+            .defineInRange("CHEST_BOAT_THRESHOLD_BOOST", 30, -Double.MAX_VALUE, Double.MAX_VALUE);
+
+    public static final ModConfigSpec.DoubleValue BOAT_THRESHOLD_BOOST = BUILDER
+            .comment("The amount to add to your weight thresholds for riding normal boats.")
+            .defineInRange("BOAT_THRESHOLD_BOOST", 0, -Double.MAX_VALUE, Double.MAX_VALUE);
+
     public static final ModConfigSpec.BooleanValue LEVEL_1_SLOWDOWN = BUILDER
             .comment("If true, level 1 encumbrance slows the player.")
             .define("level_1_slowdown", false);
@@ -63,6 +71,10 @@ public class ServerConfig {
             .comment("If true, level 1 encumbrance prevents the player from jumping.")
             .define("level_1_disable_jump", false);
 
+    public static final ModConfigSpec.BooleanValue LEVEL_1_DISABLE_ELYTRA = BUILDER
+            .comment("If true, level 1 encumbrance prevents the player from using elytra.")
+            .define("level_1_disable_elytra", false);
+
     public static final ModConfigSpec.BooleanValue LEVEL_2_SLOWDOWN = BUILDER
             .comment("If true, level 2 encumbrance slows the player.")
             .define("level_2_slowdown", true);
@@ -82,6 +94,14 @@ public class ServerConfig {
     public static final ModConfigSpec.BooleanValue LEVEL_2_DISABLE_JUMP = BUILDER
             .comment("If true, level 2 encumbrance prevents the player from jumping.")
             .define("level_2_disable_jump", true);
+
+    public static final ModConfigSpec.BooleanValue LEVEL_2_DISABLE_ELYTRA = BUILDER
+            .comment("If true, level 2 encumbrance prevents the player from using elytra.")
+            .define("level_2_disable_elytra", true);
+
+    public static final ModConfigSpec.IntValue NESTED_INVENTORY_DEPTH = BUILDER
+            .comment("How many layers of inventories inside inventories should be counted. 0 = disabled.")
+            .defineInRange("nested_inventory_depth", 3, 0, 10);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 }

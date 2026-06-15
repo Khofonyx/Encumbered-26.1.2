@@ -7,14 +7,18 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.equine.*;
 import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.minecraft.world.entity.vehicle.boat.AbstractChestBoat;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.EntityMountEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -35,7 +39,7 @@ public class ApplyEffects {
 
         // Creative/spectator should have no encumbrance effects
         if (shouldIgnoreEncumbrance(player)) {
-            sendEncumbranceLevel(player, 0, playerWeight, false, false);
+            sendEncumbranceLevel(player, 0, playerWeight, false, false, false);
             togglePlayerSlowdown(player, false);
             return;
         }
@@ -62,33 +66,57 @@ public class ApplyEffects {
         applyConfiguredEffects(player, level);
         boolean cannotSprint = shouldDisableSprint(level);
         boolean cannotJump = shouldDisableJump(level);
+        boolean cannotUseElytra = shouldDisableElytra(level);
         // Send the "level" variable to the client so they can see how encumbered the player is.
-        sendEncumbranceLevel(player, level, playerWeight, cannotSprint, cannotJump);
+        sendEncumbranceLevel(player, level, playerWeight, cannotSprint, cannotJump, cannotUseElytra);
+    }
+
+    private static boolean shouldDisableElytra(int level){
+        return switch(level){
+            case 2 -> ServerConfig.LEVEL_2_DISABLE_ELYTRA.get();
+            case 1 -> ServerConfig.LEVEL_1_DISABLE_ELYTRA.get();
+            default -> false;
+        };
     }
 
     // Entity interact event used to stop a player from mounting an entity if they are over that entities carry weight.
     @SubscribeEvent
-    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        Player player = event.getEntity();
+    public static void onEntityMount(EntityMountEvent event) {
+        // Only care about mounting, not dismounting.
+        if (!event.isMounting()) {
+            return;
+        }
 
+        // Only care when the thing mounting is a player.
+        if (!(event.getEntityMounting() instanceof Player player)) {
+            return;
+        }
+
+        // Server only.
         if (player.level().isClientSide()) {
             return;
         }
-        float mount_boost_amount = getMountThresholdBoost(event.getTarget());
 
-        if (mount_boost_amount == 0.0F) {
+        if (shouldIgnoreEncumbrance(player)) {
             return;
         }
 
-        if (shouldIgnoreEncumbrance(player)){
+        Entity vehicle = event.getEntityBeingMounted();
+        if (vehicle instanceof AbstractMinecart){
             return;
         }
+        float mountBoost = getMountThresholdBoost(vehicle);
 
-        float playerWeight = CalculateWeight.getInventoryWeight(player);
-        float th2 = ServerConfig.THRESHOLD_2.get().floatValue();
-        if (playerWeight >= (mount_boost_amount + th2)) {
+        float playerWeight = CalculateWeight.getPlayerOnlyInventoryWeight(player);
+        float vehicleInventoryWeight = CalculateWeight.getVehicleWeight(vehicle);
+
+        float totalWeightAfterMounting = playerWeight + vehicleInventoryWeight;
+
+        float maxAllowedWeight = ServerConfig.THRESHOLD_2.get().floatValue() + mountBoost;
+
+        if (totalWeightAfterMounting >= maxAllowedWeight) {
             event.setCanceled(true);
-            player.sendSystemMessage(Component.literal("You weigh too much!"));
+            player.sendSystemMessage(Component.literal("You weigh too much to ride this!"));
         }
     }
 
@@ -111,6 +139,12 @@ public class ApplyEffects {
         }
         if(entity instanceof Camel){
             return ServerConfig.CAMEL_THRESHOLD_BOOST.get().floatValue();
+        }
+        if (entity instanceof AbstractChestBoat) {
+            return ServerConfig.CHEST_BOAT_THRESHOLD_BOOST.get().floatValue();
+        }
+        if (entity instanceof AbstractBoat) {
+            return ServerConfig.BOAT_THRESHOLD_BOOST.get().floatValue();
         }
         return 0f;
     }
@@ -140,12 +174,13 @@ public class ApplyEffects {
             int level,
             float weight,
             boolean cannotSprint,
-            boolean cannotJump
+            boolean cannotJump,
+            boolean cannotUseElytra
     ) {
         if (player instanceof ServerPlayer serverPlayer) {
             PacketDistributor.sendToPlayer(
                     serverPlayer,
-                    new EncumberedPayload(level, weight, cannotSprint, cannotJump)
+                    new EncumberedPayload(level, weight, cannotSprint, cannotJump, cannotUseElytra)
             );
         }
     }
@@ -214,6 +249,7 @@ public class ApplyEffects {
         boolean shouldSlowdown = false;
         boolean shouldDismount = false;
         boolean shouldSink = false;
+        boolean shouldDisableJump = shouldDisableJump(level);
 
         switch (level) {
             case 2:
@@ -234,14 +270,23 @@ public class ApplyEffects {
         }
 
         togglePlayerSlowdown(player, shouldSlowdown);
+        togglePlayerJumpStrength(player, shouldDisableJump);
 
-        if (shouldDismount) {
+        if (shouldDismount && !isRidingMinecart(player)) {
             player.stopRiding();
+        }
+
+        if (shouldDisableElytra(level)){
+            player.stopFallFlying();
         }
 
         if (shouldSink) {
             applySinkingEffect(player);
         }
+    }
+
+    private static boolean isRidingMinecart(Player player){
+        return player.getVehicle() instanceof AbstractMinecart;
     }
     private static boolean shouldDisableSprint(int level) {
         return switch (level) {
@@ -249,6 +294,25 @@ public class ApplyEffects {
             case 1 -> ServerConfig.LEVEL_1_DISABLE_SPRINT.get();
             default -> false;
         };
+    }
+
+    public static void togglePlayerJumpStrength(Player player, boolean toggle){
+        var jump = player.getAttribute(Attributes.JUMP_STRENGTH);
+        if (jump == null){
+            return;
+        }
+
+        boolean hasModifier = jump.getModifier(AttributeModifiers.playerJumpID) != null;
+
+        if(toggle){
+            if (!hasModifier){
+                jump.addTransientModifier(AttributeModifiers.playerJumpModifier);
+            }
+        }else{
+            if(hasModifier){
+                jump.removeModifier(AttributeModifiers.playerJumpModifier);
+            }
+        }
     }
 
     private static boolean shouldDisableJump(int level) {
