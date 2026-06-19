@@ -7,6 +7,9 @@ import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackWrapper;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.IBackpackWrapper;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.UpgradeHandler;
 
+// Adds sophisticated backpacks upgrade slot support.
+// Just need to add dependencies in build gradle by going to the curseforge page and taking the mod's maven info.
+// 'implementation' means the mod is a hard dependency.
 public class SophisticatedBackpacksCompat {
     private SophisticatedBackpacksCompat() {
     }

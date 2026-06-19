@@ -2,6 +2,7 @@ package net.khofo.encumbered.server;
 
 import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.ServerConfig;
+import net.khofo.encumbered.compat.CuriosSlotCompat;
 import net.khofo.encumbered.data.WeightsDataMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.Container;
@@ -57,6 +58,8 @@ public class CalculateWeight {
             total += getStackWeight(carried, 0);
         }
 
+        total += getCuriosWeight(player);
+
         return total;
     }
 
@@ -91,6 +94,14 @@ public class CalculateWeight {
         }
 
         return total;
+    }
+
+    private static float getCuriosWeight(Player player) {
+        if (!ModList.get().isLoaded("curios")) {
+            return 0.0F;
+        }
+
+        return CuriosSlotCompat.getCuriosWeight(player);
     }
 
     public static float getStackWeight(ItemStack stack, int depth) {
