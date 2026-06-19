@@ -20,6 +20,8 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.access.ItemAccess;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.khofo.encumbered.compat.SophisticatedBackpacksCompat;
+import net.neoforged.fml.ModList;
 
 @EventBusSubscriber(modid = Encumbered.MOD_ID)
 public class CalculateWeight {
@@ -27,6 +29,14 @@ public class CalculateWeight {
     // Calculate the player's weight (inventory, hotbar, item in left hand, item on mouse cursor, armor slots, vehicle slots)
     public static float getInventoryWeight(Player player) {
         return getPlayerOnlyInventoryWeight(player) + getPlayerVehicleWeight(player);
+    }
+
+    private static float getCompatUpgradeWeight(ItemStack stack, int depth) {
+        if (!ModList.get().isLoaded("sophisticatedbackpacks")) {
+            return 0.0F;
+        }
+
+        return SophisticatedBackpacksCompat.getUpgradeWeight(stack, depth);
     }
 
     public static float getPlayerOnlyInventoryWeight(Player player) {
@@ -83,7 +93,7 @@ public class CalculateWeight {
         return total;
     }
 
-    private static float getStackWeight(ItemStack stack, int depth) {
+    public static float getStackWeight(ItemStack stack, int depth) {
         if (stack.isEmpty()) {
             return 0.0F;
         }
@@ -103,16 +113,19 @@ public class CalculateWeight {
     }
 
     private static float getContainedItemsWeight(ItemStack stack, int depth) {
+        float total = 0.0F;
+
         float vanillaContainerWeight = getVanillaContainerWeight(stack, depth);
 
-        // Important:
-        // If it has vanilla container data, use that and do not also check capability.
-        // This helps avoid double-counting.
         if (vanillaContainerWeight >= 0.0F) {
-            return vanillaContainerWeight;
+            total += vanillaContainerWeight;
+        } else {
+            total += getCapabilityInventoryWeight(stack, depth);
         }
 
-        return getCapabilityInventoryWeight(stack, depth);
+        total += getCompatUpgradeWeight(stack, depth);
+
+        return total;
     }
 
     private static float getVanillaContainerWeight(ItemStack stack, int depth) {

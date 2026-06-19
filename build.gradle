@@ -28,6 +28,10 @@ sourceSets.main.resources {
 
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
+    maven {
+        name = "CurseMaven"
+        url = "https://cursemaven.com"
+    }
 }
 
 base {
@@ -113,6 +117,11 @@ configurations {
 }
 
 dependencies {
+    compileOnly "curse.maven:sophisticated-backpacks-422301:8272343"
+    compileOnly "curse.maven:sophisticated-core-618298:8272348"
+
+    localRuntime "curse.maven:sophisticated-backpacks-422301:8272343"
+    localRuntime "curse.maven:sophisticated-core-618298:8272348"
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
