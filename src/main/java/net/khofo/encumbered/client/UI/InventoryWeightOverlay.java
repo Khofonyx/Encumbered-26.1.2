@@ -5,6 +5,7 @@ import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.client.ClientEncumberedData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -47,12 +48,10 @@ public class InventoryWeightOverlay {
 
     @SubscribeEvent
     public static void onScreenRender(ScreenEvent.Render.Post event) {
-        if (!(event.getScreen() instanceof InventoryScreen)) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!shouldShowWeightBox(minecraft)) {
             return;
         }
-
-        Minecraft minecraft = Minecraft.getInstance();
-
         if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
             return;
         }
@@ -101,17 +100,28 @@ public class InventoryWeightOverlay {
                 BOX_HEIGHT
         );
 
-        // Render the anvil icon
-        setInitialAnvilPositionIfNeeded(
-                event.getScreen().width,
-                event.getScreen().height
-        );
-        renderAnvilIcon(graphics, event.getScreen().width, event.getScreen().height);
+        if (shouldShowAnvilIconInScreen(minecraft)) {
+            setInitialAnvilPositionIfNeeded(
+                    event.getScreen().width,
+                    event.getScreen().height
+            );
+
+            renderAnvilIcon(
+                    graphics,
+                    event.getScreen().width,
+                    event.getScreen().height
+            );
+        }
     }
+
 
     @SubscribeEvent
     public static void onHudRender(RenderGuiEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+
+        if (minecraft.screen != null) {
+            return;
+        }
 
         if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
             return;
@@ -129,6 +139,10 @@ public class InventoryWeightOverlay {
                 minecraft.getWindow().getGuiScaledWidth(),
                 minecraft.getWindow().getGuiScaledHeight()
         );
+    }
+
+    private static boolean shouldShowAnvilIconInScreen(Minecraft minecraft) {
+        return minecraft.screen instanceof InventoryScreen;
     }
 
     private static void renderAnvilIcon(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight) {
@@ -149,6 +163,14 @@ public class InventoryWeightOverlay {
                 ANVIL_WIDTH,
                 ANVIL_HEIGHT
         );
+    }
+
+    private static boolean shouldShowWeightBox(Minecraft minecraft) {
+        if (minecraft.screen == null) {
+            return false;
+        }
+
+        return minecraft.screen instanceof AbstractContainerScreen<?>;
     }
 
     private static Identifier getAnvilIcon() {
@@ -210,15 +232,16 @@ public class InventoryWeightOverlay {
     // This event is waiting for a mount click on the screen. used to be able to drag the weight indicator box
     @SubscribeEvent
     public static void onMouseClicked(ScreenEvent.MouseButtonPressed.Pre event) {
-        if (!(event.getScreen() instanceof InventoryScreen)) {
+        Minecraft minecraft = Minecraft.getInstance();
+
+        if (!shouldShowWeightBox(minecraft)) {
             return;
         }
 
         double mouseX = event.getMouseX();
         double mouseY = event.getMouseY();
 
-        // Check anvil first
-        if (isMouseOverAnvil(mouseX, mouseY)) {
+        if (shouldShowAnvilIconInScreen(minecraft) && isMouseOverAnvil(mouseX, mouseY)) {
             draggingAnvil = true;
 
             anvilDragOffsetX = (int) mouseX - anvilX;
@@ -228,7 +251,6 @@ public class InventoryWeightOverlay {
             return;
         }
 
-        // Then check weight box
         if (isMouseOverBox(mouseX, mouseY)) {
             dragging = true;
 
@@ -247,11 +269,13 @@ public class InventoryWeightOverlay {
 
     @SubscribeEvent
     public static void onMouseDragged(ScreenEvent.MouseDragged.Pre event) {
-        if (!(event.getScreen() instanceof InventoryScreen)) {
+        Minecraft minecraft = Minecraft.getInstance();
+
+        if (!shouldShowWeightBox(minecraft)) {
             return;
         }
 
-        if (draggingAnvil) {
+        if (shouldShowAnvilIconInScreen(minecraft) && draggingAnvil) {
             anvilX = (int) event.getMouseX() - anvilDragOffsetX;
             anvilY = (int) event.getMouseY() - anvilDragOffsetY;
 
@@ -269,6 +293,10 @@ public class InventoryWeightOverlay {
 
             event.setCanceled(true);
         }
+    }
+
+    private static boolean shouldShowAnvilIcon(Minecraft minecraft) {
+        return minecraft.screen instanceof InventoryScreen;
     }
 
     // helper method to determine if the user is over top of the weight indicator box
