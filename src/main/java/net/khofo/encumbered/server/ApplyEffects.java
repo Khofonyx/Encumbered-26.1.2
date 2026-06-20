@@ -7,7 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.equine.*;
@@ -37,16 +36,17 @@ public class ApplyEffects {
         // Calculate the players weight.
         float playerWeight = CalculateWeight.getInventoryWeight(player);
 
-        // Creative/spectator should have no encumbrance effects
-        if (shouldIgnoreEncumbrance(player)) {
-            sendEncumbranceLevel(player, 0, playerWeight, false, false, false);
-            togglePlayerSlowdown(player, false);
-            return;
-        }
-
         // Get the player thresholds from the configs
         float th1 = ServerConfig.THRESHOLD_1.get().floatValue();
         float th2 = ServerConfig.THRESHOLD_2.get().floatValue();
+
+        // Creative/spectator should have no encumbrance effects
+        if (shouldIgnoreEncumbrance(player)) {
+            sendEncumbranceLevel(player, 0, playerWeight, false, false, false,th1,th2,ServerConfig.NESTED_INVENTORY_DEPTH.get());
+            togglePlayerSlowdown(player, false);
+            togglePlayerJumpStrength(player, false);
+            return;
+        }
 
         // If you are on a vehicle, get it's boost amount from the configs and add it to the players thresholds.
         float mount_boost = getMountThresholdBoost(player.getVehicle());
@@ -68,7 +68,7 @@ public class ApplyEffects {
         boolean cannotJump = shouldDisableJump(level);
         boolean cannotUseElytra = shouldDisableElytra(level);
         // Send the "level" variable to the client so they can see how encumbered the player is.
-        sendEncumbranceLevel(player, level, playerWeight, cannotSprint, cannotJump, cannotUseElytra);
+        sendEncumbranceLevel(player, level, playerWeight, cannotSprint, cannotJump, cannotUseElytra,th1,th2,ServerConfig.NESTED_INVENTORY_DEPTH.get());
     }
 
     private static boolean shouldDisableElytra(int level){
@@ -175,12 +175,15 @@ public class ApplyEffects {
             float weight,
             boolean cannotSprint,
             boolean cannotJump,
-            boolean cannotUseElytra
+            boolean cannotUseElytra,
+            float th1,
+            float th2,
+            int nestedInventoryDepth
     ) {
         if (player instanceof ServerPlayer serverPlayer) {
             PacketDistributor.sendToPlayer(
                     serverPlayer,
-                    new EncumberedPayload(level, weight, cannotSprint, cannotJump, cannotUseElytra)
+                    new EncumberedPayload(level, weight, cannotSprint, cannotJump, cannotUseElytra,th1,th2,nestedInventoryDepth)
             );
         }
     }

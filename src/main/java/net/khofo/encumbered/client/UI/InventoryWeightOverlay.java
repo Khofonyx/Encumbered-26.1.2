@@ -1,12 +1,12 @@
 package net.khofo.encumbered.client.UI;
 
+import com.mojang.blaze3d.platform.cursor.CursorType;
 import net.khofo.encumbered.ClientConfig;
 import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.client.ClientEncumberedData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -15,24 +15,41 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
+import org.lwjgl.glfw.GLFW;
+
 import static java.lang.Math.clamp;
 
 // This class renders the Weight Overlay in the player's menu screen.
 @EventBusSubscriber(modid = Encumbered.MOD_ID, value = Dist.CLIENT)
 public class InventoryWeightOverlay {
+
+    private static final CursorType POINTING_HAND =
+            CursorType.createStandardCursor(
+                    GLFW.GLFW_HAND_CURSOR,
+                    "pointing_hand",
+                    CursorType.DEFAULT
+            );
     private static Integer x = null;
     private static Integer y = null;
+
+    private static int displayMode = 0;
+    private static boolean draggedSinceClick = false;
 
     private static boolean dragging = false;
     private static int dragOffsetX = 0;
     private static int dragOffsetY = 0;
 
+    private static float xPercent = -1.0F;
+    private static float yPercent = -1.0F;
+
+    private static float anvilXPercent = -1.0F;
+    private static float anvilYPercent = -1.0F;
+
+    private static int lastScreenWidth = -1;
+    private static int lastScreenHeight = -1;
+
     private static Integer anvilX = null;
     private static Integer anvilY = null;
-
-    private static boolean draggingAnvil = false;
-    private static int anvilDragOffsetX = 0;
-    private static int anvilDragOffsetY = 0;
 
     private static final int BOX_WIDTH = 56;
     private static final int BOX_HEIGHT = 18;
@@ -42,6 +59,11 @@ public class InventoryWeightOverlay {
 
     private static final Identifier KG_BOX = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/kg_box");
     private static final Identifier LB_BOX = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/lb_box");
+
+    private static final Identifier KG_BOX_TH1 = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/kg_box_yellow");
+    private static final Identifier KG_BOX_TH2 = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/kg_box_red");
+    private static final Identifier LB_BOX_TH1 = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/lb_box_yellow");
+    private static final Identifier LB_BOX_TH2 = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/lb_box_red");
     private static final Identifier ANVIL_GREY = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/anvil_grey");
     private static final Identifier ANVIL_YELLOW = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/anvil_yellow");
     private static final Identifier ANVIL_RED = Identifier.fromNamespaceAndPath(Encumbered.MOD_ID, "weight/anvil_red");
@@ -52,7 +74,7 @@ public class InventoryWeightOverlay {
         if (!shouldShowWeightBox(minecraft)) {
             return;
         }
-        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
+        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator() || ClientConfig.HIDE_WEIGHT_INDICATOR.get()) {
             return;
         }
 
@@ -60,37 +82,57 @@ public class InventoryWeightOverlay {
         if (x == null && y == null) {
             x = (event.getScreen().width / 2) - 28 + ClientConfig.INVENTORY_WEIGHT_INDICATOR_X.get();
             y = 60 + ClientConfig.INVENTORY_WEIGHT_INDICATOR_Y.get();
+            saveWeightPositionPercent(event.getScreen().width, event.getScreen().height);
         }
 
-        float weight = ClientEncumberedData.getWeight();
+        float displayWeight = switch (displayMode) {
+            case 1 -> ClientEncumberedData.getTh1();
+            case 2 -> ClientEncumberedData.getTh2();
+            default -> ClientEncumberedData.getWeight();
+        };
 
-        // build the text to be displayed.
-        Component text = Component.literal(formatWeight(weight));
+        Component text = Component.literal(formatWeight(displayWeight));
+
+        updatePositionsForScreenSize(event.getScreen().width, event.getScreen().height);
 
         // Make sure the x and y values are not outside of the screen bounds before rendering
         clampToScreen(event.getScreen().width, event.getScreen().height);
         var graphics = event.getGuiGraphics();
 
+        boolean hoveringBox = isMouseOverBox(event.getMouseX(), event.getMouseY());
+
+        if (hoveringBox || dragging) {
+            graphics.requestCursor(POINTING_HAND);
+            graphics.fill(RenderPipelines.GUI, x, y, x + BOX_WIDTH, y + BOX_HEIGHT, 0x33FFFFFF);
+            graphics.fill(RenderPipelines.GUI, x, y, x + BOX_WIDTH, y + 1, 0xFFFFFFFF);
+            graphics.fill(RenderPipelines.GUI, x, y + BOX_HEIGHT - 1, x + BOX_WIDTH, y + BOX_HEIGHT, 0xFFFFFFFF);
+            graphics.fill(RenderPipelines.GUI, x, y, x + 1, y + BOX_HEIGHT, 0xFFFFFFFF);
+            graphics.fill(RenderPipelines.GUI, x + BOX_WIDTH - 1, y, x + BOX_WIDTH, y + BOX_HEIGHT, 0xFFFFFFFF);
+        }
+
         // Render the black box behind the text
         graphics.fill(RenderPipelines.GUI,x+4,y+4,x+ 38,y+14,0xFF000000);
 
         // render the text containing the weight
-        int color = 0;
-        switch(ClientEncumberedData.getLevel()){
-            case 1:
-                color = 0xFFFFFF00;
-                break;
-            case 2:
-                color = 0xFFFF0000;
-                break;
-            default:
-                color = 0xFFFFFFFF;
-                break;
+        int color = switch (displayMode) {
+            case 1 -> 0xFFFFFF00;
+            case 2 -> 0xFFFF0000;
+            default -> switch (ClientEncumberedData.getLevel()) {
+                case 1 -> 0xFFFFFF00;
+                case 2 -> 0xFFFF0000;
+                default -> 0xFFFFFFFF;
+            };
+        };
+        int textX = x + 5;
+        if (displayMode == 1 || displayMode == 2){
+            textX = x + 21 - (minecraft.font.width(text)/2);
         }
-        graphics.text(minecraft.font, text, x + 5,y + 5,color, true);
+
+        graphics.text(minecraft.font, text, textX,y + 5,color, true);
 
         // Render the lbs or kgs png.
-        Identifier boxTexture = ClientConfig.USE_KGS.get() ? KG_BOX : LB_BOX;
+        Identifier boxTexture = getBoxTexture();
+
         graphics.blitSprite(
                 RenderPipelines.GUI_TEXTURED,
                 boxTexture,
@@ -100,18 +142,6 @@ public class InventoryWeightOverlay {
                 BOX_HEIGHT
         );
 
-        if (shouldShowAnvilIconInScreen(minecraft)) {
-            setInitialAnvilPositionIfNeeded(
-                    event.getScreen().width,
-                    event.getScreen().height
-            );
-
-            renderAnvilIcon(
-                    graphics,
-                    event.getScreen().width,
-                    event.getScreen().height
-            );
-        }
     }
 
 
@@ -119,11 +149,7 @@ public class InventoryWeightOverlay {
     public static void onHudRender(RenderGuiEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
 
-        if (minecraft.screen != null) {
-            return;
-        }
-
-        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator()) {
+        if (minecraft.player == null || minecraft.player.isCreative() || minecraft.player.isSpectator() || ClientConfig.HIDE_ANVIL_ICON.get()) {
             return;
         }
 
@@ -133,7 +159,10 @@ public class InventoryWeightOverlay {
         );
 
         var graphics = event.getGuiGraphics();
-
+        updatePositionsForScreenSize(
+                minecraft.getWindow().getGuiScaledWidth(),
+                minecraft.getWindow().getGuiScaledHeight()
+        );
         renderAnvilIcon(
                 graphics,
                 minecraft.getWindow().getGuiScaledWidth(),
@@ -141,8 +170,63 @@ public class InventoryWeightOverlay {
         );
     }
 
-    private static boolean shouldShowAnvilIconInScreen(Minecraft minecraft) {
-        return minecraft.screen instanceof InventoryScreen;
+    private static void updatePositionsForScreenSize(int screenWidth, int screenHeight) {
+        if (screenWidth <= 0 || screenHeight <= 0) {
+            return;
+        }
+
+        if (lastScreenWidth == -1 || lastScreenHeight == -1) {
+            lastScreenWidth = screenWidth;
+            lastScreenHeight = screenHeight;
+            return;
+        }
+
+        if (lastScreenWidth == screenWidth && lastScreenHeight == screenHeight) {
+            return;
+        }
+
+        if (x != null && y != null && xPercent >= 0.0F && yPercent >= 0.0F) {
+            x = Math.round(xPercent * screenWidth);
+            y = Math.round(yPercent * screenHeight);
+            clampToScreen(screenWidth, screenHeight);
+        }
+
+        if (anvilX != null && anvilY != null && anvilXPercent >= 0.0F && anvilYPercent >= 0.0F) {
+            anvilX = Math.round(anvilXPercent * screenWidth);
+            anvilY = Math.round(anvilYPercent * screenHeight);
+            clampAnvilToScreen(screenWidth, screenHeight);
+        }
+
+        lastScreenWidth = screenWidth;
+        lastScreenHeight = screenHeight;
+    }
+
+    private static void saveWeightPositionPercent(int screenWidth, int screenHeight) {
+        if (x == null || y == null || screenWidth <= 0 || screenHeight <= 0) {
+            return;
+        }
+
+        xPercent = (float) x / (float) screenWidth;
+        yPercent = (float) y / (float) screenHeight;
+    }
+
+    private static void saveAnvilPositionPercent(int screenWidth, int screenHeight) {
+        if (anvilX == null || anvilY == null || screenWidth <= 0 || screenHeight <= 0) {
+            return;
+        }
+
+        anvilXPercent = (float) anvilX / (float) screenWidth;
+        anvilYPercent = (float) anvilY / (float) screenHeight;
+    }
+
+    private static Identifier getBoxTexture() {
+        boolean useKgs = ClientConfig.USE_KGS.get();
+
+        return switch (displayMode) {
+            case 1 -> useKgs ? KG_BOX_TH1 : LB_BOX_TH1;
+            case 2 -> useKgs ? KG_BOX_TH2 : LB_BOX_TH2;
+            default -> useKgs ? KG_BOX : LB_BOX;
+        };
     }
 
     private static void renderAnvilIcon(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight) {
@@ -194,7 +278,7 @@ public class InventoryWeightOverlay {
 
     // Helper method to make sure only 5 digits gets displayed at a time.
     // prevents the text from extending past the box dimensions.
-    private static String formatWeight(float weight) {
+    public static String formatWeight(float weight) {
         weight = Math.max(0.0F, weight);
 
         if (weight >= 100000.0F) {
@@ -241,18 +325,9 @@ public class InventoryWeightOverlay {
         double mouseX = event.getMouseX();
         double mouseY = event.getMouseY();
 
-        if (shouldShowAnvilIconInScreen(minecraft) && isMouseOverAnvil(mouseX, mouseY)) {
-            draggingAnvil = true;
-
-            anvilDragOffsetX = (int) mouseX - anvilX;
-            anvilDragOffsetY = (int) mouseY - anvilY;
-
-            event.setCanceled(true);
-            return;
-        }
-
         if (isMouseOverBox(mouseX, mouseY)) {
             dragging = true;
+            draggedSinceClick = false;
 
             dragOffsetX = (int) mouseX - x;
             dragOffsetY = (int) mouseY - y;
@@ -263,8 +338,13 @@ public class InventoryWeightOverlay {
 
     @SubscribeEvent
     public static void onMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
+        if (dragging && !draggedSinceClick) {
+            displayMode = (displayMode + 1) % 3;
+            event.setCanceled(true);
+        }
+
         dragging = false;
-        draggingAnvil = false;
+        draggedSinceClick = false;
     }
 
     @SubscribeEvent
@@ -275,28 +355,16 @@ public class InventoryWeightOverlay {
             return;
         }
 
-        if (shouldShowAnvilIconInScreen(minecraft) && draggingAnvil) {
-            anvilX = (int) event.getMouseX() - anvilDragOffsetX;
-            anvilY = (int) event.getMouseY() - anvilDragOffsetY;
-
-            clampAnvilToScreen(event.getScreen().width, event.getScreen().height);
-
-            event.setCanceled(true);
-            return;
-        }
-
         if (dragging) {
+            draggedSinceClick = true;
             x = (int) event.getMouseX() - dragOffsetX;
             y = (int) event.getMouseY() - dragOffsetY;
 
             clampToScreen(event.getScreen().width, event.getScreen().height);
+            saveWeightPositionPercent(event.getScreen().width, event.getScreen().height);
 
             event.setCanceled(true);
         }
-    }
-
-    private static boolean shouldShowAnvilIcon(Minecraft minecraft) {
-        return minecraft.screen instanceof InventoryScreen;
     }
 
     // helper method to determine if the user is over top of the weight indicator box
@@ -318,6 +386,8 @@ public class InventoryWeightOverlay {
 
         anvilX = (screenWidth / 2) - (ANVIL_WIDTH / 2) + ClientConfig.ANVIL_WEIGHT_INDICATOR_X.get();
         anvilY = screenHeight - 50 + ClientConfig.ANVIL_WEIGHT_INDICATOR_Y.get();
+
+        saveAnvilPositionPercent(screenWidth, screenHeight);
     }
 
     private static void clampAnvilToScreen(int screenWidth, int screenHeight) {
@@ -341,11 +411,6 @@ public class InventoryWeightOverlay {
     private static int getAnvilStompOffset() {
         // Only stomp when fully overweight.
         if (ClientEncumberedData.getLevel() != 2) {
-            return 0;
-        }
-
-        // Do not animate while dragging.
-        if (draggingAnvil) {
             return 0;
         }
 

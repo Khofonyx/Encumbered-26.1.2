@@ -32,12 +32,12 @@ public class CalculateWeight {
         return getPlayerOnlyInventoryWeight(player) + getPlayerVehicleWeight(player);
     }
 
-    private static float getCompatUpgradeWeight(ItemStack stack, int depth) {
+    private static float getCompatUpgradeWeight(ItemStack stack, int depth, int maxDepth) {
         if (!ModList.get().isLoaded("sophisticatedbackpacks")) {
             return 0.0F;
         }
 
-        return SophisticatedBackpacksCompat.getUpgradeWeight(stack, depth);
+        return SophisticatedBackpacksCompat.getUpgradeWeight(stack, depth, maxDepth);
     }
 
     public static float getPlayerOnlyInventoryWeight(Player player) {
@@ -105,41 +105,46 @@ public class CalculateWeight {
     }
 
     public static float getStackWeight(ItemStack stack, int depth) {
+        return getStackWeight(
+                stack,
+                depth,
+                ServerConfig.NESTED_INVENTORY_DEPTH.get()
+        );
+    }
+
+    public static float getStackWeight(ItemStack stack, int depth, int maxDepth) {
         if (stack.isEmpty()) {
             return 0.0F;
         }
 
-        // Weight of the item stack itself.
         float total = WeightsDataMap.getWeight(stack) * stack.getCount();
 
-        // Stop here if nested inventory support is disabled or too deep.
-        if (depth >= ServerConfig.NESTED_INVENTORY_DEPTH.get()) {
+        if (depth >= maxDepth) {
             return total;
         }
 
-        // Add weight of items inside this item stack.
-        total += getContainedItemsWeight(stack, depth);
+        total += getContainedItemsWeight(stack, depth, maxDepth);
 
         return total;
     }
 
-    private static float getContainedItemsWeight(ItemStack stack, int depth) {
+    private static float getContainedItemsWeight(ItemStack stack, int depth, int maxDepth) {
         float total = 0.0F;
 
-        float vanillaContainerWeight = getVanillaContainerWeight(stack, depth);
+        float vanillaContainerWeight = getVanillaContainerWeight(stack, depth, maxDepth);
 
         if (vanillaContainerWeight >= 0.0F) {
             total += vanillaContainerWeight;
         } else {
-            total += getCapabilityInventoryWeight(stack, depth);
+            total += getCapabilityInventoryWeight(stack, depth, maxDepth);
         }
 
-        total += getCompatUpgradeWeight(stack, depth);
+        total += getCompatUpgradeWeight(stack, depth, maxDepth);
 
         return total;
     }
 
-    private static float getVanillaContainerWeight(ItemStack stack, int depth) {
+    private static float getVanillaContainerWeight(ItemStack stack, int depth, int maxDepth) {
         ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
 
         if (contents == null) {
@@ -155,13 +160,13 @@ public class CalculateWeight {
                     template.components()
             );
 
-            total += getStackWeight(containedStack, depth + 1);
+            total += getStackWeight(containedStack, depth + 1, maxDepth);
         }
 
         return total;
     }
 
-    private static float getCapabilityInventoryWeight(ItemStack stack, int depth) {
+    private static float getCapabilityInventoryWeight(ItemStack stack, int depth, int maxDepth) {
         ResourceHandler<ItemResource> handler =
                 ItemAccess.forStack(stack).getCapability(Capabilities.Item.ITEM);
 
@@ -183,7 +188,7 @@ public class CalculateWeight {
             ItemStack containedStack = resource.toStack(amount);
 
             if (!containedStack.isEmpty()) {
-                total += getStackWeight(containedStack, depth + 1);
+                total += getStackWeight(containedStack, depth + 1, maxDepth);
             }
         }
 

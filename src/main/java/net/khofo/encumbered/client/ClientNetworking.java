@@ -19,7 +19,10 @@ public class ClientNetworking {
                             payload.weight(),
                             payload.cannotSprint(),
                             payload.cannotJump(),
-                            payload.cannotUseElytra()
+                            payload.cannotUseElytra(),
+                            payload.th1(),
+                            payload.th2(),
+                            payload.nestedInventoryDepth()
                     );
                 }
         );

@@ -27,5 +27,7 @@
   "encumbered.configuration.INVENTORY_WEIGHT_INDICATOR_X": "Inventory Weight Indicator X Offset",
   "encumbered.configuration.INVENTORY_WEIGHT_INDICATOR_Y": "Inventory Weight Indicator Y Offset",
   "encumbered.configuration.ANVIL_WEIGHT_INDICATOR_X": "Anvil Icon X Offset",
-  "encumbered.configuration.ANVIL_WEIGHT_INDICATOR_Y": "Anvil Icon Y Offset"
+  "encumbered.configuration.ANVIL_WEIGHT_INDICATOR_Y": "Anvil Icon Y Offset",
+  "encumbered.configuration.hide_weight_indicator": "Hide Weight Indicator",
+  "encumbered.configuration.hide_anvil_icon": "Hide Anvil Icon"
 }

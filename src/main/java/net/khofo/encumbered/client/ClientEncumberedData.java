@@ -17,12 +17,20 @@ public class ClientEncumberedData {
     private static boolean cannotJump = false;
     private static boolean cannotUseElytra = false;
 
-    public static void set(int newLevel, float newWeight, boolean newCannotSprint, boolean newCannotJump, boolean newCannotUseElytra) {
+    private static float th1 = 0F;
+    private static float th2 = 0F;
+
+    private static int nestedInventoryDepth = 0;
+
+    public static void set(int newLevel, float newWeight, boolean newCannotSprint, boolean newCannotJump, boolean newCannotUseElytra, float newth1, float newth2, int newNestedInventoryDepth) {
         level = newLevel;
         weight = newWeight;
         cannotSprint = newCannotSprint;
         cannotJump = newCannotJump;
         cannotUseElytra = newCannotUseElytra;
+        th2 = newth2;
+        th1 = newth1;
+        nestedInventoryDepth = newNestedInventoryDepth;
     }
 
     public static boolean cannotSprint() {
@@ -44,4 +52,10 @@ public class ClientEncumberedData {
     public static boolean cannotUseElytra(){
         return cannotUseElytra;
     }
+
+    public static float getTh1(){return th1;}
+
+    public static float getTh2(){return th2;}
+
+    public static int getNestedInventoryDepth(){return nestedInventoryDepth;}
 }

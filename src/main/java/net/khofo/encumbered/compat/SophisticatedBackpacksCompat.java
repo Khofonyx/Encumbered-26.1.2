@@ -14,7 +14,7 @@ public class SophisticatedBackpacksCompat {
     private SophisticatedBackpacksCompat() {
     }
 
-    public static float getUpgradeWeight(ItemStack stack, int depth) {
+    public static float getUpgradeWeight(ItemStack stack, int depth, int maxDepth) {
         if (stack.isEmpty()) {
             return 0.0F;
         }
@@ -32,7 +32,7 @@ public class SophisticatedBackpacksCompat {
             ItemStack upgradeStack = upgradeHandler.getStackInSlot(slot);
 
             if (!upgradeStack.isEmpty()) {
-                total += CalculateWeight.getStackWeight(upgradeStack, depth + 1);
+                total += CalculateWeight.getStackWeight(upgradeStack, depth + 1, maxDepth);
             }
         }
 
