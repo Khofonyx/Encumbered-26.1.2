@@ -10,6 +10,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvents;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -123,7 +124,7 @@ public class InventoryWeightOverlay {
         }
 
         // Render the black box behind the text
-        graphics.fill(RenderPipelines.GUI,x+4,y+4,x+ 38,y+14,0xFF000000);
+        graphics.fill(RenderPipelines.GUI, x + 4, y + 4, x + 38, y + 14, 0xFF000000);
 
         // render the text containing the weight
         int color = switch (displayMode) {
@@ -136,11 +137,11 @@ public class InventoryWeightOverlay {
             };
         };
         int textX = x + 5;
-        if (displayMode == 1 || displayMode == 2){
-            textX = x + 21 - (minecraft.font.width(text)/2);
+        if (displayMode == 1 || displayMode == 2) {
+            textX = x + 21 - (minecraft.font.width(text) / 2);
         }
 
-        graphics.text(minecraft.font, text, textX,y + 5,color, true);
+        graphics.text(minecraft.font, text, textX, y + 5, color, true);
 
         // Render the lbs or kgs png.
         Identifier boxTexture = getBoxTexture();
@@ -316,6 +317,7 @@ public class InventoryWeightOverlay {
     public static void onMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
         if (dragging && !draggedSinceClick) {
             displayMode = (displayMode + 1) % 3;
+            playButtonClickSound();
             event.setCanceled(true);
         }
 
@@ -416,4 +418,35 @@ public class InventoryWeightOverlay {
         return 0;
     }
 
+    private static void playButtonClickSound() {
+       switch (displayMode) {
+           case 1:
+               Minecraft.getInstance().getSoundManager().play(
+                       net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                               SoundEvents.ANVIL_PLACE,
+                               .9F,
+                               .65F
+                       )
+               );
+               break;
+           case 2:
+               Minecraft.getInstance().getSoundManager().play(
+                       net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                               SoundEvents.ANVIL_PLACE,
+                               1F,
+                               .65F
+                       )
+               );
+               break;
+           default:
+               Minecraft.getInstance().getSoundManager().play(
+                       net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                               SoundEvents.ANVIL_PLACE,
+                               .8F,
+                               .65F
+                       )
+               );
+               break;
+       };
+    }
 }
