@@ -1,19 +1,19 @@
 {
   "values": {
     "#minecraft:stone": {
-      "weight": 1.0
+      "weight": 0.5
     },
     "minecraft:dirt": {
-      "weight": 1.0
+      "weight": 0.25
     },
     "minecraft:iron_block": {
-      "weight": 10000.0
+      "weight": 72.0
     },
     "#minecraft:logs": {
-      "weight": 7.0
+      "weight": 2.0
     },
     "minecraft:iron_ingot": {
-      "weight": 9.123456789
+      "weight": 8
     }
   }
 }

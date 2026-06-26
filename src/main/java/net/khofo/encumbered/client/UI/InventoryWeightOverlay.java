@@ -35,15 +35,15 @@ public class InventoryWeightOverlay {
     private static int displayMode = 0;
     private static boolean draggedSinceClick = false;
 
+    private static int lastWeightConfigX = Integer.MIN_VALUE;
+    private static int lastWeightConfigY = Integer.MIN_VALUE;
+
     private static boolean dragging = false;
     private static int dragOffsetX = 0;
     private static int dragOffsetY = 0;
 
     private static float xPercent = -1.0F;
     private static float yPercent = -1.0F;
-
-    private static float anvilXPercent = -1.0F;
-    private static float anvilYPercent = -1.0F;
 
     private static int lastScreenWidth = -1;
     private static int lastScreenHeight = -1;
@@ -79,10 +79,22 @@ public class InventoryWeightOverlay {
         }
 
         // This is needed to place the weight indicator UI in the middle of the screen upon initial load.
-        if (x == null && y == null) {
-            x = (event.getScreen().width / 2) - 28 + ClientConfig.INVENTORY_WEIGHT_INDICATOR_X.get();
-            y = 60 + ClientConfig.INVENTORY_WEIGHT_INDICATOR_Y.get();
+        int weightConfigX = ClientConfig.INVENTORY_WEIGHT_INDICATOR_X.get();
+        int weightConfigY = ClientConfig.INVENTORY_WEIGHT_INDICATOR_Y.get();
+
+        boolean weightConfigChanged =
+                weightConfigX != lastWeightConfigX || weightConfigY != lastWeightConfigY;
+
+        // This is needed to place the weight indicator UI in the middle of the screen
+        // upon initial load, or when the config values are changed in-game.
+        if (x == null || y == null || weightConfigChanged) {
+            x = (event.getScreen().width / 2) - 28 + weightConfigX;
+            y = 60 + weightConfigY;
+
             saveWeightPositionPercent(event.getScreen().width, event.getScreen().height);
+
+            lastWeightConfigX = weightConfigX;
+            lastWeightConfigY = weightConfigY;
         }
 
         float displayWeight = switch (displayMode) {
@@ -153,16 +165,7 @@ public class InventoryWeightOverlay {
             return;
         }
 
-        setInitialAnvilPositionIfNeeded(
-                minecraft.getWindow().getGuiScaledWidth(),
-                minecraft.getWindow().getGuiScaledHeight()
-        );
-
         var graphics = event.getGuiGraphics();
-        updatePositionsForScreenSize(
-                minecraft.getWindow().getGuiScaledWidth(),
-                minecraft.getWindow().getGuiScaledHeight()
-        );
         renderAnvilIcon(
                 graphics,
                 minecraft.getWindow().getGuiScaledWidth(),
@@ -191,12 +194,6 @@ public class InventoryWeightOverlay {
             clampToScreen(screenWidth, screenHeight);
         }
 
-        if (anvilX != null && anvilY != null && anvilXPercent >= 0.0F && anvilYPercent >= 0.0F) {
-            anvilX = Math.round(anvilXPercent * screenWidth);
-            anvilY = Math.round(anvilYPercent * screenHeight);
-            clampAnvilToScreen(screenWidth, screenHeight);
-        }
-
         lastScreenWidth = screenWidth;
         lastScreenHeight = screenHeight;
     }
@@ -210,15 +207,6 @@ public class InventoryWeightOverlay {
         yPercent = (float) y / (float) screenHeight;
     }
 
-    private static void saveAnvilPositionPercent(int screenWidth, int screenHeight) {
-        if (anvilX == null || anvilY == null || screenWidth <= 0 || screenHeight <= 0) {
-            return;
-        }
-
-        anvilXPercent = (float) anvilX / (float) screenWidth;
-        anvilYPercent = (float) anvilY / (float) screenHeight;
-    }
-
     private static Identifier getBoxTexture() {
         boolean useKgs = ClientConfig.USE_KGS.get();
 
@@ -230,8 +218,7 @@ public class InventoryWeightOverlay {
     }
 
     private static void renderAnvilIcon(GuiGraphicsExtractor graphics, int screenWidth, int screenHeight) {
-        setInitialAnvilPositionIfNeeded(screenWidth, screenHeight);
-        clampAnvilToScreen(screenWidth, screenHeight);
+        updateAnvilPosition(screenWidth, screenHeight);
 
         int drawX = anvilX;
         int drawY = anvilY + getAnvilStompOffset();
@@ -263,17 +250,6 @@ public class InventoryWeightOverlay {
             case 2 -> ANVIL_RED;
             default -> ANVIL_GREY;
         };
-    }
-
-    private static boolean isMouseOverAnvil(double mouseX, double mouseY) {
-        if (anvilX == null || anvilY == null) {
-            return false;
-        }
-
-        return mouseX >= anvilX
-                && mouseX <= anvilX + ANVIL_WIDTH
-                && mouseY >= anvilY
-                && mouseY <= anvilY + ANVIL_HEIGHT;
     }
 
     // Helper method to make sure only 5 digits gets displayed at a time.
@@ -379,15 +355,11 @@ public class InventoryWeightOverlay {
                 && mouseY <= y + BOX_HEIGHT;
     }
 
-    private static void setInitialAnvilPositionIfNeeded(int screenWidth, int screenHeight) {
-        if (anvilX != null && anvilY != null) {
-            return;
-        }
-
+    private static void updateAnvilPosition(int screenWidth, int screenHeight) {
         anvilX = (screenWidth / 2) - (ANVIL_WIDTH / 2) + ClientConfig.ANVIL_WEIGHT_INDICATOR_X.get();
         anvilY = screenHeight - 50 + ClientConfig.ANVIL_WEIGHT_INDICATOR_Y.get();
 
-        saveAnvilPositionPercent(screenWidth, screenHeight);
+        clampAnvilToScreen(screenWidth, screenHeight);
     }
 
     private static void clampAnvilToScreen(int screenWidth, int screenHeight) {
@@ -443,4 +415,5 @@ public class InventoryWeightOverlay {
         // Rest until next cycle.
         return 0;
     }
+
 }
