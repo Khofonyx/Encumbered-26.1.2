@@ -2,6 +2,7 @@ package net.khofo.encumbered.server;
 
 import net.khofo.encumbered.ServerConfig;
 import net.khofo.encumbered.Encumbered;
+import net.khofo.encumbered.data.CarryCapacityBonus;
 import net.khofo.encumbered.server.packets.EncumberedPayload;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -47,6 +48,10 @@ public class ApplyEffects {
             togglePlayerJumpStrength(player, false);
             return;
         }
+
+        CarryCapacityBonus carryCapacityBonus = CalculateWeight.getCarryCapacityBonus(player);
+        th1 = carryCapacityBonus.apply(th1);
+        th2 = carryCapacityBonus.apply(th2);
 
         // If you are on a vehicle, get it's boost amount from the configs and add it to the players thresholds.
         float mount_boost = getMountThresholdBoost(player.getVehicle());
@@ -112,7 +117,13 @@ public class ApplyEffects {
 
         float totalWeightAfterMounting = playerWeight + vehicleInventoryWeight;
 
-        float maxAllowedWeight = ServerConfig.THRESHOLD_2.get().floatValue() + mountBoost;
+        float maxAllowedWeight = ServerConfig.THRESHOLD_2.get().floatValue();
+
+        CarryCapacityBonus carryCapacityBonus =
+                CalculateWeight.getCarryCapacityBonus(player);
+
+        maxAllowedWeight = carryCapacityBonus.apply(maxAllowedWeight);
+        maxAllowedWeight += mountBoost;
 
         if (totalWeightAfterMounting >= maxAllowedWeight) {
             event.setCanceled(true);

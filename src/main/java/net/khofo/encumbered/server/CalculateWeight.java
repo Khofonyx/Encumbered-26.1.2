@@ -3,6 +3,9 @@ package net.khofo.encumbered.server;
 import net.khofo.encumbered.Encumbered;
 import net.khofo.encumbered.ServerConfig;
 import net.khofo.encumbered.compat.CuriosSlotCompat;
+import net.khofo.encumbered.data.BoostItem;
+import net.khofo.encumbered.data.BoostItemMap;
+import net.khofo.encumbered.data.CarryCapacityBonus;
 import net.khofo.encumbered.data.WeightsDataMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.Container;
@@ -13,6 +16,7 @@ import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.boat.AbstractChestBoat;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -23,6 +27,9 @@ import net.neoforged.neoforge.transfer.access.ItemAccess;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.khofo.encumbered.compat.SophisticatedBackpacksCompat;
 import net.neoforged.fml.ModList;
+
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 @EventBusSubscriber(modid = Encumbered.MOD_ID)
 public class CalculateWeight {
@@ -219,5 +226,100 @@ public class CalculateWeight {
         }
 
         return total;
+    }
+
+    private enum BoostSource {
+        INVENTORY,
+        ARMOR,
+        OFFHAND,
+        CURIOS
+    }
+
+    private static class BoostAccumulator {
+        double flatBonus = 0.0;
+        double multiplierBonus = 0.0;
+
+        final Map<Item, Integer> appliedCounts = new IdentityHashMap<>();
+    }
+
+    public static CarryCapacityBonus getCarryCapacityBonus(Player player) {
+        BoostAccumulator accumulator = new BoostAccumulator();
+        Inventory inventory = player.getInventory();
+
+        // Main inventory + hotbar.
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            ItemStack stack = inventory.getItem(slot);
+
+            if (!stack.isEmpty()) {
+                addBoostStack(stack, BoostSource.INVENTORY, accumulator);
+            }
+        }
+
+        // Equipped armor.
+        addBoostStack(player.getItemBySlot(EquipmentSlot.HEAD), BoostSource.ARMOR, accumulator);
+        addBoostStack(player.getItemBySlot(EquipmentSlot.CHEST), BoostSource.ARMOR, accumulator);
+        addBoostStack(player.getItemBySlot(EquipmentSlot.LEGS), BoostSource.ARMOR, accumulator);
+        addBoostStack(player.getItemBySlot(EquipmentSlot.FEET), BoostSource.ARMOR, accumulator);
+
+        // Equipped offhand.
+        addBoostStack(player.getItemBySlot(EquipmentSlot.OFFHAND), BoostSource.OFFHAND, accumulator);
+
+        if (ModList.get().isLoaded("curios")) {
+            CuriosSlotCompat.forEachCuriosStack(player, stack ->
+                    addBoostStack(stack, BoostSource.CURIOS, accumulator)
+            );
+        }
+
+        return new CarryCapacityBonus(
+                accumulator.flatBonus,
+                accumulator.multiplierBonus
+        );
+    }
+
+    private static void addBoostStack(ItemStack stack, BoostSource source, BoostAccumulator accumulator) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        BoostItem boostItem = BoostItemMap.get(stack);
+
+        if (boostItem == null) {
+            return;
+        }
+
+        if (!isBoostActiveInSource(boostItem, source)) {
+            return;
+        }
+
+        if (boostItem.maxStacks() <= 0) {
+            return;
+        }
+
+        Item item = stack.getItem();
+
+        int alreadyApplied = accumulator.appliedCounts.getOrDefault(item, 0);
+        int remainingAllowed = boostItem.maxStacks() - alreadyApplied;
+
+        if (remainingAllowed <= 0) {
+            return;
+        }
+
+        int amountToApply = Math.min(stack.getCount(), remainingAllowed);
+
+        switch (boostItem.boostType()) {
+            case FLAT -> accumulator.flatBonus += boostItem.amount() * amountToApply;
+            case MULTIPLIER -> accumulator.multiplierBonus += boostItem.amount() * amountToApply;
+        }
+
+        accumulator.appliedCounts.put(item, alreadyApplied + amountToApply);
+    }
+
+    private static boolean isBoostActiveInSource(BoostItem boostItem, BoostSource source) {
+        return switch (source) {
+            case INVENTORY -> boostItem.activeInInventory();
+            case ARMOR -> boostItem.activeInArmor();
+            case OFFHAND -> boostItem.activeInOffhand();
+            case CURIOS -> boostItem.activeInCurios();
+        };
     }
 }

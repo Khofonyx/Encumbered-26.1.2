@@ -1,0 +1,41 @@
+{
+  "values": {
+    "#minecraft:logs": {
+      "boost_type": "flat",
+      "amount": 100,
+      "active_in_inventory": true,
+      "active_in_armor": false,
+      "active_in_offhand": true,
+      "active_in_curios": true,
+      "max_stacks": 1
+    },
+    "minecraft:wheat_seeds": {
+      "boost_type": "multiplier",
+      "amount": 1.0,
+      "active_in_inventory": true,
+      "active_in_armor": true,
+      "active_in_offhand": true,
+      "active_in_curios": true,
+      "max_stacks": 1
+    },
+    "minecraft:diamond_helmet": {
+      "boost_type": "multiplier",
+      "amount": 1.0,
+      "active_in_inventory": false,
+      "active_in_armor": true,
+      "active_in_offhand": false,
+      "active_in_curios": false,
+      "max_stacks": 1
+    },
+    "sophisticatedbackpacks:backpack": {
+      "boost_type": "multiplier",
+      "amount": 1.0,
+      "active_in_inventory": false,
+      "active_in_armor": true,
+      "active_in_offhand": false,
+      "active_in_curios": true,
+      "max_stacks": 1
+    }
+
+  }
+}

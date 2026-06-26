@@ -1,6 +1,8 @@
 package net.khofo.encumbered;
 
+import net.khofo.encumbered.data.BoostItemMap;
 import net.khofo.encumbered.data.WeightsDataMap;
+import net.khofo.encumbered.server.DatapackPathGenerator;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -32,12 +34,15 @@ public class Encumbered {
         // Note that this is necessary if and only if we want *this* class (Encumbered) to respond directly to events.
         // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
         NeoForge.EVENT_BUS.register(this);
-
+        NeoForge.EVENT_BUS.register(DatapackPathGenerator.class);
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
 
         // Register the Weights Data Map
         modEventBus.addListener(WeightsDataMap::registerWeightsDataMap);
+
+        // Register the Boost Items Data Map
+        modEventBus.addListener(BoostItemMap::registerBoostItemMap);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);

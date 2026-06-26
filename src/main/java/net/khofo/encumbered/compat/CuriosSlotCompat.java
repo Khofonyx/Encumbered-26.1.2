@@ -7,6 +7,8 @@ import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 
+import java.util.function.Consumer;
+
 public class CuriosSlotCompat {
     private CuriosSlotCompat(){
 
@@ -34,6 +36,22 @@ public class CuriosSlotCompat {
         }
 
         return total;
+    }
+
+    public static void forEachCuriosStack(Player player, Consumer<ItemStack> consumer) {
+        CuriosApi.getCuriosInventory(player).ifPresent(curiosInventory -> {
+            for (ICurioStacksHandler slotInventory : curiosInventory.getCurios().values()) {
+                var stacks = slotInventory.getStacks();
+
+                for (int slot = 0; slot < stacks.getSlots(); slot++) {
+                    ItemStack stack = stacks.getStackInSlot(slot);
+
+                    if (!stack.isEmpty()) {
+                        consumer.accept(stack);
+                    }
+                }
+            }
+        });
     }
 
 }
